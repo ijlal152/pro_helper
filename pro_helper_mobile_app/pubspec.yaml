@@ -73,6 +73,7 @@ dependencies:
   intl: ^0.19.0
   logger: ^2.5.0
   internet_connection_checker: ^3.0.1
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

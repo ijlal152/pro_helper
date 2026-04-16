@@ -7,6 +7,7 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
 import '../../features/booking/presentation/pages/bookings_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/professional/presentation/pages/professional_registration_screen.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
 import '../../injection.dart';
@@ -42,6 +43,13 @@ class AppRouter {
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/professional-registration/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return ProfessionalRegistrationScreen(userId: userId);
+        },
       ),
       GoRoute(path: '/home', builder: (context, state) => const HomePage()),
       GoRoute(
