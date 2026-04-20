@@ -11,6 +11,7 @@ import '../../features/auth/presentation/pages/welcome_page.dart';
 import '../../features/booking/presentation/pages/bookings_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/professional/presentation/bloc/professional_registration_bloc.dart';
+import '../../features/professional/presentation/pages/professional_detail_page.dart';
 import '../../features/professional/presentation/pages/professional_registration_screen.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
@@ -86,6 +87,13 @@ class AppRouter {
         builder: (context, state) => const ProfilePage(),
       ),
       GoRoute(path: '/search', builder: (context, state) => const SearchPage()),
+      GoRoute(
+        path: '/professional-detail/:id',
+        builder: (context, state) {
+          final professionalId = state.pathParameters['id']!;
+          return ProfessionalDetailPage(professionalId: professionalId);
+        },
+      ),
       GoRoute(
         path: '/bookings',
         builder: (context, state) => const BookingsPage(),

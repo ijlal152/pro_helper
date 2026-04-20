@@ -33,6 +33,7 @@ dependencies:
 
   # UI
   cupertino_icons: ^1.0.8
+  carousel_slider: ^5.0.0
 
   # State Management
   flutter_bloc: ^8.1.6

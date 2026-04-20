@@ -52,7 +52,8 @@ enum UserType {
 /// Professional types
 enum ProfessionType {
   plumber,
-  electrician;
+  electrician,
+  cctvInstaller;
 
   String get displayName {
     switch (this) {
@@ -60,6 +61,19 @@ enum ProfessionType {
         return 'Plumber';
       case ProfessionType.electrician:
         return 'Electrician';
+      case ProfessionType.cctvInstaller:
+        return 'CCTV Installer';
+    }
+  }
+
+  String get icon {
+    switch (this) {
+      case ProfessionType.plumber:
+        return '🔧';
+      case ProfessionType.electrician:
+        return '⚡';
+      case ProfessionType.cctvInstaller:
+        return '📹';
     }
   }
 }
