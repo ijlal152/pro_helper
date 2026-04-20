@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,9 +16,23 @@ import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
 import '../../injection.dart';
 
+// Create a notifier for auth state changes
+class AuthNotifier extends ChangeNotifier {
+  final AuthCubit authCubit;
+
+  AuthNotifier(this.authCubit) {
+    authCubit.stream.listen((_) {
+      notifyListeners();
+    });
+  }
+}
+
 class AppRouter {
+  static final _authNotifier = AuthNotifier(getIt<AuthCubit>());
+
   static GoRouter router = GoRouter(
     initialLocation: '/',
+    refreshListenable: _authNotifier,
     redirect: (context, state) {
       final authCubit = getIt<AuthCubit>();
       final authState = authCubit.state;

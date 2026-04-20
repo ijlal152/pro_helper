@@ -1,12 +1,7 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/constants/app_config.dart';
-import 'core/network/dio_client.dart';
-import 'core/network/network_info.dart';
 import 'features/professional/data/datasources/professional_mock_datasource.dart';
 import 'features/professional/data/datasources/professional_remote_datasource.dart';
 import 'features/professional/data/repositories/professional_repository_impl.dart';
@@ -26,24 +21,11 @@ final getIt = GetIt.instance;
   asExtension: true,
 )
 Future<void> configureDependencies() async {
-  // Register external dependencies
-  getIt.registerLazySingleton(() => InternetConnectionChecker.instance);
-
-  final sharedPreferences = await SharedPreferences.getInstance();
-  getIt.registerLazySingleton(() => sharedPreferences);
-
-  const secureStorage = FlutterSecureStorage();
-  getIt.registerLazySingleton(() => secureStorage);
-
-  // Register core dependencies
-  getIt.registerLazySingleton(() => DioClient());
-  getIt.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(getIt()));
+  // Initialize injectable generated code (registers all annotated deps + module deps)
+  await getIt.init();
 
   // Register Professional feature dependencies
   _registerProfessionalDependencies();
-
-  // Initialize injectable generated code
-  getIt.init();
 }
 
 void _registerProfessionalDependencies() {

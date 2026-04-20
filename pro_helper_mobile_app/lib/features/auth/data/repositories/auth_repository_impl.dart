@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/constants/app_config.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
@@ -23,11 +24,54 @@ class AuthRepositoryImpl implements AuthRepository {
     required this.networkInfo,
   });
 
+  // Mock user data for testing
+  UserModel _createMockUser({
+    required String email,
+    required UserType userType,
+    ProfessionType? professionType,
+  }) {
+    return UserModel(
+      id: 'test-user-${DateTime.now().millisecondsSinceEpoch}',
+      name: 'Test User',
+      email: email,
+      phoneNumber: '+1234567890',
+      userType: userType.value,
+      professionType: professionType?.name,
+      rating: professionType != null ? 4.5 : null,
+      yearsOfExperience: professionType != null ? 5 : null,
+      currentLocation: const LocationModel(
+        latitude: 37.7749,
+        longitude: -122.4194,
+        address: 'San Francisco, CA',
+      ),
+      workLocation: professionType != null
+          ? const LocationModel(
+              latitude: 37.7749,
+              longitude: -122.4194,
+              address: 'San Francisco, CA',
+            )
+          : null,
+    );
+  }
+
   @override
   Future<Either<Failure, User>> loginWithEmail({
     required String email,
     required String password,
   }) async {
+    // Use mock data in test mode
+    if (AppConfig.useTestData) {
+      await Future.delayed(
+        const Duration(milliseconds: 500),
+      ); // Simulate network delay
+      final mockUser = _createMockUser(
+        email: email,
+        userType: UserType.customer,
+      );
+      await localDataSource.cacheUser(mockUser);
+      return Right(mockUser.toEntity());
+    }
+
     if (await networkInfo.isConnected) {
       try {
         final userModel = await remoteDataSource.loginWithEmail(
@@ -79,6 +123,20 @@ class AuthRepositoryImpl implements AuthRepository {
     ProfessionType? professionType,
     Location? location,
   }) async {
+    // Use mock data in test mode
+    if (AppConfig.useTestData) {
+      await Future.delayed(
+        const Duration(milliseconds: 500),
+      ); // Simulate network delay
+      final mockUser = _createMockUser(
+        email: email,
+        userType: userType,
+        professionType: professionType,
+      );
+      await localDataSource.cacheUser(mockUser);
+      return Right(mockUser.toEntity());
+    }
+
     if (await networkInfo.isConnected) {
       try {
         final userData = {

@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
+import '../constants/app_config.dart';
+
 @lazySingleton
 class DioClient {
   late final Dio _dio;
@@ -9,7 +11,7 @@ class DioClient {
   DioClient() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: 'YOUR_API_BASE_URL', // TODO: Replace with actual API URL
+        baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         sendTimeout: const Duration(seconds: 30),
