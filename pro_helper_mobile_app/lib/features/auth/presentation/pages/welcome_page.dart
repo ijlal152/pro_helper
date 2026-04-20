@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_config.dart';
+
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
@@ -45,6 +47,32 @@ class WelcomePage extends StatelessWidget {
 
               const Spacer(),
 
+              // Test mode indicator
+              if (AppConfig.useTestData)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    border: Border.all(color: Colors.orange),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.science, color: Colors.orange, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'TEST MODE - Using Mock Data',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               // Login button
               ElevatedButton(
                 onPressed: () {
@@ -61,6 +89,25 @@ class WelcomePage extends StatelessWidget {
                 },
                 child: const Text('Create Account'),
               ),
+
+              // Test Professional Registration button (only in test mode)
+              if (AppConfig.useTestData) ...[
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    // Use a test user ID for demonstration
+                    context.push('/professional-registration/test-user-123');
+                  },
+                  icon: const Icon(Icons.science),
+                  label: const Text('Test Professional Registration'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                    side: const BorderSide(color: Colors.orange),
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 24),
             ],

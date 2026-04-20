@@ -1,5 +1,7 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_config.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/cubit/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -7,6 +9,7 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
 import '../../features/booking/presentation/pages/bookings_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/professional/presentation/bloc/professional_registration_bloc.dart';
 import '../../features/professional/presentation/pages/professional_registration_screen.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
@@ -24,6 +27,14 @@ class AppRouter {
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/register' ||
           state.matchedLocation == '/';
+
+      // In test mode, allow access to professional registration
+      final isProfessionalRegistration = state.matchedLocation.startsWith(
+        '/professional-registration',
+      );
+      if (AppConfig.useTestData && isProfessionalRegistration) {
+        return null; // Allow access in test mode
+      }
 
       // Redirect to home if authenticated and trying to access auth pages
       if (isAuthenticated && isAuthRoute) {
@@ -48,7 +59,10 @@ class AppRouter {
         path: '/professional-registration/:userId',
         builder: (context, state) {
           final userId = state.pathParameters['userId']!;
-          return ProfessionalRegistrationScreen(userId: userId);
+          return BlocProvider(
+            create: (context) => getIt<ProfessionalRegistrationBloc>(),
+            child: ProfessionalRegistrationScreen(userId: userId),
+          );
         },
       ),
       GoRoute(path: '/home', builder: (context, state) => const HomePage()),
