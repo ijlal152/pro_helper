@@ -1,121 +1,138 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/constants.dart';
 import '../../../../core/mock_data/mock_bookings.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../injection.dart';
+import '../cubit/bookings_cubit.dart';
 
-class BookingsPage extends StatefulWidget {
+class BookingsPage extends StatelessWidget {
   const BookingsPage({super.key});
 
   @override
-  State<BookingsPage> createState() => _BookingsPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<BookingsCubit>()..initialize(),
+      child: const _BookingsPageContent(),
+    );
+  }
 }
 
-class _BookingsPageState extends State<BookingsPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _BookingsPageContent extends StatelessWidget {
+  const _BookingsPageContent();
 
   @override
   Widget build(BuildContext context) {
-    final upcomingBookings = MockBookings.getUpcomingBookings();
-    final pastBookings = MockBookings.getPastBookings();
+    return BlocBuilder<BookingsCubit, BookingsState>(
+      builder: (context, state) {
+        final cubit = context.read<BookingsCubit>();
+        final upcomingBookings = MockBookings.getUpcomingBookings();
+        final pastBookings = MockBookings.getPastBookings();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Bookings'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Upcoming'),
-                  if (upcomingBookings.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${upcomingBookings.length}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
+        return DefaultTabController(
+          length: 2,
+          initialIndex: (state as BookingsLoaded).selectedTabIndex,
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text(
+                'My Bookings',
+                style: AppTypography.headingLarge(context),
+              ),
+              bottom: TabBar(
+                onTap: (index) => cubit.selectTab(index),
+                tabs: [
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Upcoming',
+                          style: AppTypography.bodyMedium(context),
                         ),
-                      ),
+                        if (upcomingBookings.isNotEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${upcomingBookings.length}',
+                              style: AppTypography.bodySmall(
+                                context,
+                              ).copyWith(color: Colors.white),
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
+                  Tab(
+                    child: Text(
+                      'Past',
+                      style: AppTypography.bodyMedium(context),
+                    ),
+                  ),
                 ],
               ),
             ),
-            const Tab(text: 'Past'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Upcoming Bookings Tab
-          upcomingBookings.isEmpty
-              ? _buildEmptyState(
-                  icon: Icons.calendar_today,
-                  title: 'No Upcoming Bookings',
-                  subtitle: 'Find professionals and book their services',
-                  actionLabel: 'Browse Professionals',
-                  onAction: () => context.push('/search'),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: upcomingBookings.length,
-                  itemBuilder: (context, index) {
-                    return BookingCard(
-                      booking: upcomingBookings[index],
-                      isUpcoming: true,
-                    );
-                  },
-                ),
+            body: TabBarView(
+              children: [
+                // Upcoming Bookings Tab
+                upcomingBookings.isEmpty
+                    ? _buildEmptyState(
+                        context: context,
+                        icon: Icons.calendar_today,
+                        title: 'No Upcoming Bookings',
+                        subtitle: 'Find professionals and book their services',
+                        actionLabel: 'Browse Professionals',
+                        onAction: () => context.push('/search'),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: upcomingBookings.length,
+                        itemBuilder: (context, index) {
+                          return BookingCard(
+                            booking: upcomingBookings[index],
+                            isUpcoming: true,
+                          );
+                        },
+                      ),
 
-          // Past Bookings Tab
-          pastBookings.isEmpty
-              ? _buildEmptyState(
-                  icon: Icons.history,
-                  title: 'No Past Bookings',
-                  subtitle: 'Your completed bookings will appear here',
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: pastBookings.length,
-                  itemBuilder: (context, index) {
-                    return BookingCard(
-                      booking: pastBookings[index],
-                      isUpcoming: false,
-                    );
-                  },
-                ),
-        ],
-      ),
+                // Past Bookings Tab
+                pastBookings.isEmpty
+                    ? _buildEmptyState(
+                        context: context,
+                        icon: Icons.history,
+                        title: 'No Past Bookings',
+                        subtitle: 'Your completed bookings will appear here',
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: pastBookings.length,
+                        itemBuilder: (context, index) {
+                          return BookingCard(
+                            booking: pastBookings[index],
+                            isUpcoming: false,
+                          );
+                        },
+                      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildEmptyState({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -130,15 +147,14 @@ class _BookingsPageState extends State<BookingsPage>
           children: [
             Icon(icon, size: 100, color: Colors.grey[300]),
             const SizedBox(height: 24),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            Text(title, style: AppTypography.headingMedium(context)),
             const SizedBox(height: 8),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
+              style: AppTypography.bodyMedium(
+                context,
+              ).copyWith(color: Colors.grey[600]),
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
@@ -197,6 +213,7 @@ class BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<BookingsCubit>();
     final dateFormat = DateFormat('MMM dd, yyyy');
     final timeFormat = DateFormat('h:mm a');
 
@@ -226,7 +243,7 @@ class BookingCard extends StatelessWidget {
                         ),
                         child: Text(
                           booking.profession.icon,
-                          style: const TextStyle(fontSize: 24),
+                          style: AppTypography.headingMedium(context),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -236,18 +253,16 @@ class BookingCard extends StatelessWidget {
                           children: [
                             Text(
                               booking.professionalName,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: AppTypography.bodyLarge(
+                                context,
+                              ).copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               booking.profession.displayName,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
+                              style: AppTypography.bodySmall(
+                                context,
+                              ).copyWith(color: Colors.grey[600]),
                             ),
                           ],
                         ),
@@ -276,8 +291,7 @@ class BookingCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         booking.status.displayName,
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.bodySmall(context).copyWith(
                           fontWeight: FontWeight.bold,
                           color: _getStatusColor(),
                         ),
@@ -303,7 +317,7 @@ class BookingCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       booking.serviceDescription,
-                      style: const TextStyle(fontSize: 14),
+                      style: AppTypography.bodyMedium(context),
                     ),
                   ),
                 ],
@@ -318,14 +332,14 @@ class BookingCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   dateFormat.format(booking.scheduledDate),
-                  style: const TextStyle(fontSize: 14),
+                  style: AppTypography.bodyMedium(context),
                 ),
                 const SizedBox(width: 16),
                 Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 8),
                 Text(
                   timeFormat.format(booking.scheduledDate),
-                  style: const TextStyle(fontSize: 14),
+                  style: AppTypography.bodyMedium(context),
                 ),
               ],
             ),
@@ -338,15 +352,14 @@ class BookingCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   '${booking.estimatedDuration} hours',
-                  style: const TextStyle(fontSize: 14),
+                  style: AppTypography.bodyMedium(context),
                 ),
                 const SizedBox(width: 16),
                 Icon(Icons.attach_money, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
                 Text(
                   '\$${booking.totalCost.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: AppTypography.bodyLarge(context).copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).primaryColor,
                   ),
@@ -370,9 +383,11 @@ class BookingCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'Your Rating: ',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: AppTypography.bodyMedium(
+                            context,
+                          ).copyWith(fontWeight: FontWeight.bold),
                         ),
                         ...List.generate(5, (index) {
                           return Icon(
@@ -389,8 +404,7 @@ class BookingCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         booking.review!,
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.bodySmall(context).copyWith(
                           color: Colors.grey[700],
                           fontStyle: FontStyle.italic,
                         ),
@@ -411,7 +425,7 @@ class BookingCard extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          _showCancelDialog(context);
+                          _showCancelDialog(context, cubit);
                         },
                         icon: const Icon(Icons.cancel_outlined, size: 18),
                         label: const Text('Cancel'),
@@ -442,7 +456,7 @@ class BookingCard extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    _showRatingDialog(context);
+                    _showRatingDialog(context, cubit);
                   },
                   icon: const Icon(Icons.star_rate, size: 18),
                   label: const Text('Rate Service'),
@@ -458,14 +472,18 @@ class BookingCard extends StatelessWidget {
     );
   }
 
-  void _showCancelDialog(BuildContext context) {
+  void _showCancelDialog(BuildContext context, BookingsCubit cubit) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Cancel Booking'),
-        content: const Text(
+        title: Text(
+          'Cancel Booking',
+          style: AppTypography.headingMedium(context),
+        ),
+        content: Text(
           'Are you sure you want to cancel this booking? '
           'This action cannot be undone.',
+          style: AppTypography.bodyMedium(context),
         ),
         actions: [
           TextButton(
@@ -474,6 +492,7 @@ class BookingCard extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
+              cubit.cancelBooking(booking.id);
               Navigator.of(dialogContext).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -490,7 +509,7 @@ class BookingCard extends StatelessWidget {
     );
   }
 
-  void _showRatingDialog(BuildContext context) {
+  void _showRatingDialog(BuildContext context, BookingsCubit cubit) {
     int selectedRating = 5;
     final reviewController = TextEditingController();
 
@@ -499,7 +518,10 @@ class BookingCard extends StatelessWidget {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: const Text('Rate Your Experience'),
+            title: Text(
+              'Rate Your Experience',
+              style: AppTypography.headingMedium(context),
+            ),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -507,7 +529,7 @@ class BookingCard extends StatelessWidget {
                 children: [
                   Text(
                     'How was your experience with ${booking.professionalName}?',
-                    style: const TextStyle(fontSize: 14),
+                    style: AppTypography.bodyMedium(context),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -549,6 +571,11 @@ class BookingCard extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () {
+                  cubit.rateBooking(
+                    booking.id,
+                    selectedRating,
+                    reviewController.text.trim(),
+                  );
                   Navigator.of(dialogContext).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

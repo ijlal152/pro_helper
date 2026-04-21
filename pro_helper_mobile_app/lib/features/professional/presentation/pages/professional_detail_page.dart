@@ -1,367 +1,397 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/mock_data/mock_professionals.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../injection.dart';
+import '../cubit/professional_detail_cubit.dart';
 
-class ProfessionalDetailPage extends StatefulWidget {
+class ProfessionalDetailPage extends StatelessWidget {
   final String professionalId;
 
   const ProfessionalDetailPage({super.key, required this.professionalId});
 
   @override
-  State<ProfessionalDetailPage> createState() => _ProfessionalDetailPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<ProfessionalDetailCubit>()..initialize(),
+      child: _ProfessionalDetailPageContent(professionalId: professionalId),
+    );
+  }
 }
 
-class _ProfessionalDetailPageState extends State<ProfessionalDetailPage> {
-  int _currentImageIndex = 0;
+class _ProfessionalDetailPageContent extends StatelessWidget {
+  final String professionalId;
+
+  const _ProfessionalDetailPageContent({required this.professionalId});
 
   @override
   Widget build(BuildContext context) {
-    final professional = MockProfessionals.getProfessionalById(
-      widget.professionalId,
-    );
+    return BlocBuilder<ProfessionalDetailCubit, ProfessionalDetailState>(
+      builder: (context, state) {
+        final cubit = context.read<ProfessionalDetailCubit>();
+        final professional = MockProfessionals.getProfessionalById(
+          professionalId,
+        );
 
-    if (professional == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Professional')),
-        body: const Center(child: Text('Professional not found')),
-      );
-    }
+        if (professional == null) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(
+                'Professional',
+                style: AppTypography.headingLarge(context),
+              ),
+            ),
+            body: Center(
+              child: Text(
+                'Professional not found',
+                style: AppTypography.bodyLarge(context),
+              ),
+            ),
+          );
+        }
 
-    final user = professional.user;
+        final user = professional.user;
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // App Bar with Image
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Work Images Carousel
-                  if (professional.workImages.isNotEmpty)
-                    CarouselSlider(
-                      options: CarouselOptions(
-                        height: 300,
-                        viewportFraction: 1.0,
-                        autoPlay: true,
-                        autoPlayInterval: const Duration(seconds: 4),
-                        onPageChanged: (index, reason) {
-                          setState(() {
-                            _currentImageIndex = index;
-                          });
-                        },
-                      ),
-                      items: professional.workImages.map((imageUrl) {
-                        return Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[300],
-                              child: const Icon(
-                                Icons.image,
-                                size: 80,
-                                color: Colors.grey,
-                              ),
+        return Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              // App Bar with Image
+              SliverAppBar(
+                expandedHeight: 300,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Work Images Carousel
+                      if (professional.workImages.isNotEmpty)
+                        CarouselSlider(
+                          options: CarouselOptions(
+                            height: 300,
+                            viewportFraction: 1.0,
+                            autoPlay: true,
+                            autoPlayInterval: const Duration(seconds: 4),
+                            onPageChanged: (index, reason) {
+                              cubit.updateImageIndex(index);
+                            },
+                          ),
+                          items: professional.workImages.map((imageUrl) {
+                            return Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[300],
+                                  child: const Icon(
+                                    Icons.image,
+                                    size: 80,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
                             );
-                          },
-                        );
-                      }).toList(),
-                    )
-                  else
-                    Container(
-                      color: Colors.grey[300],
-                      child: const Icon(
-                        Icons.person,
-                        size: 100,
-                        color: Colors.grey,
-                      ),
-                    ),
-
-                  // Gradient Overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Image Counter
-                  if (professional.workImages.length > 1)
-                    Positioned(
-                      bottom: 16,
-                      right: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                          }).toList(),
+                        )
+                      else
+                        Container(
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.person,
+                            size: 100,
+                            color: Colors.grey,
+                          ),
                         ),
+
+                      // Gradient Overlay
+                      Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${_currentImageIndex + 1}/${professional.workImages.length}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.7),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-          ),
 
-          // Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Name and Profession
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user.name,
-                              style: const TextStyle(
-                                fontSize: 28,
+                      // Image Counter
+                      if (professional.workImages.length > 1)
+                        Positioned(
+                          bottom: 16,
+                          right: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${(state as ProfessionalDetailLoaded).currentImageIndex + 1}/${professional.workImages.length}',
+                              style: AppTypography.bodyMedium(context).copyWith(
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Row(
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Content
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name and Profession
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  user.professionType!.icon,
-                                  style: const TextStyle(fontSize: 18),
+                                  user.name,
+                                  style: AppTypography.headingLarge(
+                                    context,
+                                  ).copyWith(fontWeight: FontWeight.bold),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Text(
+                                      user.professionType!.icon,
+                                      style: AppTypography.bodyLarge(context),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      user.professionType!.displayName,
+                                      style: AppTypography.bodyLarge(
+                                        context,
+                                      ).copyWith(color: Colors.grey[700]),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Availability Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: professional.isAvailable
+                                  ? Colors.green.shade50
+                                  : Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: professional.isAvailable
+                                    ? Colors.green
+                                    : Colors.red,
+                                width: 2,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  professional.isAvailable
+                                      ? Icons.check_circle
+                                      : Icons.cancel,
+                                  color: professional.isAvailable
+                                      ? Colors.green.shade700
+                                      : Colors.red.shade700,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 6),
                                 Text(
-                                  user.professionType!.displayName,
+                                  professional.isAvailable
+                                      ? 'Available'
+                                      : 'Busy',
                                   style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[700],
+                                    color: professional.isAvailable
+                                        ? Colors.green.shade700
+                                        : Colors.red.shade700,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      // Availability Badge
+                      const SizedBox(height: 20),
+
+                      // Stats Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.star,
+                              iconColor: Colors.amber[700]!,
+                              label: 'Rating',
+                              value: user.rating?.toStringAsFixed(1) ?? 'N/A',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.work_outline,
+                              iconColor: Colors.blue,
+                              label: 'Experience',
+                              value: '${user.yearsOfExperience} years',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.check_circle_outline,
+                              iconColor: Colors.green,
+                              label: 'Completed',
+                              value: '${professional.completedJobs}',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Hourly Rate
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: professional.isAvailable
-                              ? Colors.green.shade50
-                              : Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(20),
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: professional.isAvailable
-                                ? Colors.green
-                                : Colors.red,
-                            width: 2,
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.3),
                           ),
                         ),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(
-                              professional.isAvailable
-                                  ? Icons.check_circle
-                                  : Icons.cancel,
-                              color: professional.isAvailable
-                                  ? Colors.green.shade700
-                                  : Colors.red.shade700,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              professional.isAvailable ? 'Available' : 'Busy',
+                            const Text(
+                              'Hourly Rate',
                               style: TextStyle(
-                                color: professional.isAvailable
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              '\$${professional.hourlyRate.toStringAsFixed(0)}/hour',
+                              style: TextStyle(
+                                fontSize: 24,
                                 fontWeight: FontWeight.bold,
+                                color: Theme.of(context).primaryColor,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
-                  // Stats Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.star,
-                          iconColor: Colors.amber[700]!,
-                          label: 'Rating',
-                          value: user.rating?.toStringAsFixed(1) ?? 'N/A',
-                        ),
+                      // About Section
+                      Text(
+                        'About',
+                        style: AppTypography.headingMedium(context),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.work_outline,
-                          iconColor: Colors.blue,
-                          label: 'Experience',
-                          value: '${user.yearsOfExperience} years',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.check_circle_outline,
-                          iconColor: Colors.green,
-                          label: 'Completed',
-                          value: '${professional.completedJobs}',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Hourly Rate
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Theme.of(context).primaryColor.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Hourly Rate',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          '\$${professional.hourlyRate.toStringAsFixed(0)}/hour',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // About Section
-                  const Text(
-                    'About',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    professional.bio,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Services Offered
-                  const Text(
-                    'Services Offered',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: professional.servicesOffered.map((service) {
-                      return Chip(
-                        label: Text(service),
-                        backgroundColor: Theme.of(
+                      const SizedBox(height: 12),
+                      Text(
+                        professional.bio,
+                        style: AppTypography.bodyLarge(
                           context,
-                        ).primaryColor.withOpacity(0.1),
-                        side: BorderSide(
-                          color: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.3),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
+                        ).copyWith(color: Colors.grey[700], height: 1.5),
+                      ),
+                      const SizedBox(height: 24),
 
-                  // Contact Information
-                  const Text(
-                    'Contact Information',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      // Services Offered
+                      Text(
+                        'Services Offered',
+                        style: AppTypography.headingMedium(context),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: professional.servicesOffered.map((service) {
+                          return Chip(
+                            label: Text(service),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.1),
+                            side: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withOpacity(0.3),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Contact Information
+                      Text(
+                        'Contact Information',
+                        style: AppTypography.headingMedium(context),
+                      ),
+                      const SizedBox(height: 12),
+                      _ContactTile(
+                        icon: Icons.email,
+                        label: 'Email',
+                        value: user.email,
+                      ),
+                      const SizedBox(height: 8),
+                      _ContactTile(
+                        icon: Icons.phone,
+                        label: 'Phone',
+                        value: user.phoneNumber ?? 'Not provided',
+                      ),
+                      const SizedBox(height: 8),
+                      _ContactTile(
+                        icon: Icons.location_on,
+                        label: 'Location',
+                        value: user.currentLocation?.address ?? 'Not provided',
+                      ),
+                      const SizedBox(height: 80), // Space for floating button
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  _ContactTile(
-                    icon: Icons.email,
-                    label: 'Email',
-                    value: user.email,
-                  ),
-                  const SizedBox(height: 8),
-                  _ContactTile(
-                    icon: Icons.phone,
-                    label: 'Phone',
-                    value: user.phoneNumber ?? 'Not provided',
-                  ),
-                  const SizedBox(height: 8),
-                  _ContactTile(
-                    icon: Icons.location_on,
-                    label: 'Location',
-                    value: user.currentLocation?.address ?? 'Not provided',
-                  ),
-                  const SizedBox(height: 80), // Space for floating button
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: professional.isAvailable
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                _showBookingDialog(context, professional);
-              },
-              icon: const Icon(Icons.calendar_today),
-              label: const Text('Book Now'),
-            )
-          : null,
+          floatingActionButton: professional.isAvailable
+              ? FloatingActionButton.extended(
+                  onPressed: () {
+                    _showBookingDialog(context, professional, cubit);
+                  },
+                  icon: const Icon(Icons.calendar_today),
+                  label: const Text('Book Now'),
+                )
+              : null,
+        );
+      },
     );
   }
 
-  void _showBookingDialog(BuildContext context, Professional professional) {
+  void _showBookingDialog(
+    BuildContext context,
+    Professional professional,
+    ProfessionalDetailCubit cubit,
+  ) {
     final descriptionController = TextEditingController();
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     int estimatedHours = 2;
@@ -371,7 +401,10 @@ class _ProfessionalDetailPageState extends State<ProfessionalDetailPage> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: const Text('Book Service'),
+            title: Text(
+              'Book Service',
+              style: AppTypography.headingMedium(context),
+            ),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -379,7 +412,9 @@ class _ProfessionalDetailPageState extends State<ProfessionalDetailPage> {
                 children: [
                   Text(
                     'Booking with ${professional.user.name}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: AppTypography.bodyLarge(
+                      context,
+                    ).copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
 
@@ -399,9 +434,13 @@ class _ProfessionalDetailPageState extends State<ProfessionalDetailPage> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.calendar_today),
-                    title: const Text('Select Date'),
+                    title: Text(
+                      'Select Date',
+                      style: AppTypography.bodyMedium(context),
+                    ),
                     subtitle: Text(
                       '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                      style: AppTypography.bodySmall(context),
                     ),
                     onTap: () async {
                       final date = await showDatePicker(
@@ -411,6 +450,7 @@ class _ProfessionalDetailPageState extends State<ProfessionalDetailPage> {
                         lastDate: DateTime.now().add(const Duration(days: 365)),
                       );
                       if (date != null) {
+                        cubit.selectDate(date);
                         setDialogState(() {
                           selectedDate = date;
                         });
@@ -422,7 +462,9 @@ class _ProfessionalDetailPageState extends State<ProfessionalDetailPage> {
                   const SizedBox(height: 8),
                   Text(
                     'Estimated Duration: $estimatedHours hours',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: AppTypography.bodyMedium(
+                      context,
+                    ).copyWith(fontWeight: FontWeight.bold),
                   ),
                   Slider(
                     value: estimatedHours.toDouble(),
@@ -431,6 +473,7 @@ class _ProfessionalDetailPageState extends State<ProfessionalDetailPage> {
                     divisions: 7,
                     label: '$estimatedHours hours',
                     onChanged: (value) {
+                      cubit.updateDuration(value);
                       setDialogState(() {
                         estimatedHours = value.toInt();
                       });
@@ -447,14 +490,15 @@ class _ProfessionalDetailPageState extends State<ProfessionalDetailPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Estimated Cost:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: AppTypography.bodyMedium(
+                            context,
+                          ).copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           '\$${(professional.hourlyRate * estimatedHours).toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 18,
+                          style: AppTypography.bodyLarge(context).copyWith(
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).primaryColor,
                           ),
@@ -532,10 +576,17 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: AppTypography.bodyLarge(
+              context,
+            ).copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          Text(
+            label,
+            style: AppTypography.bodySmall(
+              context,
+            ).copyWith(color: Colors.grey[600]),
+          ),
         ],
       ),
     );
@@ -571,15 +622,16 @@ class _ContactTile extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: AppTypography.bodySmall(
+                    context,
+                  ).copyWith(color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: AppTypography.bodyMedium(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.w500),
                 ),
               ],
             ),

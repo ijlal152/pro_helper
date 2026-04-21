@@ -141,4 +141,38 @@ class Booking {
   });
 
   double get totalCost => hourlyRate * estimatedDuration;
+
+  Booking copyWith({
+    String? id,
+    String? professionalId,
+    String? professionalName,
+    ProfessionType? profession,
+    String? customerId,
+    String? customerName,
+    String? serviceDescription,
+    DateTime? scheduledDate,
+    int? estimatedDuration,
+    double? hourlyRate,
+    BookingStatus? status,
+    String? address,
+    double? rating,
+    String? review,
+  }) {
+    return Booking(
+      id: id ?? this.id,
+      professionalId: professionalId ?? this.professionalId,
+      professionalName: professionalName ?? this.professionalName,
+      profession: profession ?? this.profession,
+      customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      serviceDescription: serviceDescription ?? this.serviceDescription,
+      scheduledDate: scheduledDate ?? this.scheduledDate,
+      estimatedDuration: estimatedDuration ?? this.estimatedDuration,
+      hourlyRate: hourlyRate ?? this.hourlyRate,
+      status: status ?? this.status,
+      address: address ?? this.address,
+      rating: rating ?? this.rating,
+      review: review ?? this.review,
+    );
+  }
 }
