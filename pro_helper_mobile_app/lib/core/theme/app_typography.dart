@@ -43,60 +43,70 @@ class AppTypography {
 
     return TextTheme(
       displayLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseHeadline1 * scaleFactor,
         fontWeight: FontWeight.bold,
         letterSpacing: -0.5,
         height: 1.2,
       ),
       displayMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseHeadline2 * scaleFactor,
         fontWeight: FontWeight.bold,
         letterSpacing: -0.3,
         height: 1.2,
       ),
       displaySmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseHeadline3 * scaleFactor,
         fontWeight: FontWeight.bold,
         letterSpacing: 0,
         height: 1.3,
       ),
       headlineMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseHeadline4 * scaleFactor,
         fontWeight: FontWeight.w600,
         letterSpacing: 0,
         height: 1.3,
       ),
       headlineSmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseHeadline5 * scaleFactor,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.1,
         height: 1.4,
       ),
       titleLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseHeadline6 * scaleFactor,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.15,
         height: 1.4,
       ),
       bodyLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseBody1 * scaleFactor,
         fontWeight: FontWeight.normal,
         letterSpacing: 0.5,
         height: 1.5,
       ),
       bodyMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseBody2 * scaleFactor,
         fontWeight: FontWeight.normal,
         letterSpacing: 0.25,
         height: 1.5,
       ),
       bodySmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseCaption * scaleFactor,
         fontWeight: FontWeight.normal,
         letterSpacing: 0.4,
         height: 1.4,
       ),
       labelLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: _baseButton * scaleFactor,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.25,
@@ -107,55 +117,65 @@ class AppTypography {
 
   // Static text styles for common use cases (use with context for responsiveness)
   static TextStyle headline1(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseHeadline1),
     fontWeight: FontWeight.bold,
     letterSpacing: -0.5,
   );
 
   static TextStyle headline2(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseHeadline2),
     fontWeight: FontWeight.bold,
     letterSpacing: -0.3,
   );
 
   static TextStyle headline3(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseHeadline3),
     fontWeight: FontWeight.bold,
   );
 
   static TextStyle headline4(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseHeadline4),
     fontWeight: FontWeight.w600,
   );
 
   static TextStyle headline5(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseHeadline5),
     fontWeight: FontWeight.w600,
   );
 
   static TextStyle headline6(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseHeadline6),
     fontWeight: FontWeight.w600,
   );
 
   static TextStyle body1(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseBody1),
     fontWeight: FontWeight.normal,
     height: 1.5,
   );
 
   static TextStyle body2(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseBody2),
     fontWeight: FontWeight.normal,
     height: 1.5,
   );
 
   static TextStyle caption(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseCaption),
     fontWeight: FontWeight.normal,
   );
 
   static TextStyle button(BuildContext context) => TextStyle(
+    fontFamily: 'Poppins',
     fontSize: responsiveFontSize(context, _baseButton),
     fontWeight: FontWeight.w600,
     letterSpacing: 1.25,

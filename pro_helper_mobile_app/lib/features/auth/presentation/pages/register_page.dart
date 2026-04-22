@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/constants.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../../injection.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../cubit/register_password_visibility_cubit.dart';
@@ -35,13 +35,31 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _register() {
     if (_formKey.currentState!.validate()) {
-      context.read<AuthCubit>().register(
-        name: _nameController.text.trim(),
+      // TODO: Enable API call when ready
+      // context.read<AuthCubit>().register(
+      //   name: _nameController.text.trim(),
+      //   email: _emailController.text.trim(),
+      //   phoneNumber: _phoneController.text.trim(),
+      //   password: _passwordController.text,
+      //   userType: UserType.customer,
+      // );
+
+      // For UI testing: Set auth state and navigate
+      getIt<AuthCubit>().testLogin(
         email: _emailController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
-        password: _passwordController.text,
-        userType: UserType.customer,
+        name: _nameController.text.trim(),
       );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Registration successful!'),
+          backgroundColor: Colors.green,
+          duration: Duration(milliseconds: 500),
+        ),
+      );
+
+      // Navigate to home (redirect guard disabled for testing)
+      context.go('/home');
     }
   }
 

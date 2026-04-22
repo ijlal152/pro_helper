@@ -94,4 +94,16 @@ class AuthCubit extends Cubit<AuthState> {
       (_) => emit(AuthUnauthenticated()),
     );
   }
+
+  /// Test login for UI testing (bypasses API)
+  void testLogin({required String email, String name = 'Test User'}) {
+    final mockUser = User(
+      id: 'test-user-id',
+      name: name,
+      email: email,
+      phoneNumber: '+1234567890',
+      userType: UserType.customer,
+    );
+    emit(AuthAuthenticated(mockUser));
+  }
 }

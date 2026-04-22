@@ -12,60 +12,70 @@ class AppTheme {
   static TextTheme get _baseTextTheme {
     return const TextTheme(
       displayLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 32,
         fontWeight: FontWeight.bold,
         letterSpacing: -0.5,
         height: 1.2,
       ),
       displayMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 28,
         fontWeight: FontWeight.bold,
         letterSpacing: -0.3,
         height: 1.2,
       ),
       displaySmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 24,
         fontWeight: FontWeight.bold,
         letterSpacing: 0,
         height: 1.3,
       ),
       headlineMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 20,
         fontWeight: FontWeight.w600,
         letterSpacing: 0,
         height: 1.3,
       ),
       headlineSmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 18,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.1,
         height: 1.4,
       ),
       titleLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.15,
         height: 1.4,
       ),
       bodyLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 16,
         fontWeight: FontWeight.normal,
         letterSpacing: 0.5,
         height: 1.5,
       ),
       bodyMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 14,
         fontWeight: FontWeight.normal,
         letterSpacing: 0.25,
         height: 1.5,
       ),
       bodySmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 12,
         fontWeight: FontWeight.normal,
         letterSpacing: 0.4,
         height: 1.4,
       ),
       labelLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.25,
@@ -78,6 +88,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      fontFamily: 'Poppins',
       colorScheme: const ColorScheme.light(
         primary: primaryPurple,
         secondary: primaryPurple,
@@ -98,6 +109,7 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.black87,
         titleTextStyle: TextStyle(
+          fontFamily: 'Poppins',
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
@@ -109,6 +121,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           textStyle: const TextStyle(
+            fontFamily: 'Poppins',
             fontSize: 16,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
@@ -123,7 +136,11 @@ class AppTheme {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: Colors.white,
-        hintStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+        hintStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 14,
+          fontWeight: FontWeight.normal,
+        ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
@@ -137,6 +154,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      fontFamily: 'Poppins',
       colorScheme: const ColorScheme.dark(
         primary: primaryPurple,
         secondary: primaryPurple,
@@ -155,6 +173,7 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         titleTextStyle: TextStyle(
+          fontFamily: 'Poppins',
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: Colors.white,
@@ -166,6 +185,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           textStyle: const TextStyle(
+            fontFamily: 'Poppins',
             fontSize: 16,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
@@ -180,7 +200,11 @@ class AppTheme {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: cardDark,
-        hintStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+        hintStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 14,
+          fontWeight: FontWeight.normal,
+        ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,

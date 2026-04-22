@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/widgets.dart';
+import '../../../../injection.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../cubit/password_visibility_cubit.dart';
@@ -28,10 +29,25 @@ class _LoginPageState extends State<LoginPage> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      context.read<AuthCubit>().loginWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      // TODO: Enable API call when ready
+      // context.read<AuthCubit>().loginWithEmailAndPassword(
+      //   email: _emailController.text.trim(),
+      //   password: _passwordController.text,
+      // );
+
+      // For UI testing: Set auth state and navigate
+      getIt<AuthCubit>().testLogin(email: _emailController.text.trim());
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login successful!'),
+          backgroundColor: Colors.green,
+          duration: Duration(milliseconds: 500),
+        ),
       );
+
+      // Navigate to home (redirect guard disabled for testing)
+      context.go('/home');
     }
   }
 
