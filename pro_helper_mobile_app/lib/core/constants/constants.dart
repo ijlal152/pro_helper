@@ -53,7 +53,10 @@ enum UserType {
 enum ProfessionType {
   plumber,
   electrician,
-  cctvInstaller;
+  cctvInstaller,
+  solarPanelInstaller,
+  painter,
+  mover;
 
   String get displayName {
     switch (this) {
@@ -62,7 +65,13 @@ enum ProfessionType {
       case ProfessionType.electrician:
         return 'Electrician';
       case ProfessionType.cctvInstaller:
-        return 'CCTV Installer';
+        return 'CCTV Installation';
+      case ProfessionType.solarPanelInstaller:
+        return 'Solar Panel Installation';
+      case ProfessionType.painter:
+        return 'Painting';
+      case ProfessionType.mover:
+        return 'Shifting';
     }
   }
 
@@ -74,30 +83,29 @@ enum ProfessionType {
         return '⚡';
       case ProfessionType.cctvInstaller:
         return '📹';
+      case ProfessionType.solarPanelInstaller:
+        return '☀️';
+      case ProfessionType.painter:
+        return '🎨';
+      case ProfessionType.mover:
+        return '🚚';
     }
   }
-}
 
-/// Booking status
-enum BookingStatus {
-  pending,
-  confirmed,
-  inProgress,
-  completed,
-  cancelled;
-
-  String get displayName {
+  String get description {
     switch (this) {
-      case BookingStatus.pending:
-        return 'Pending';
-      case BookingStatus.confirmed:
-        return 'Confirmed';
-      case BookingStatus.inProgress:
-        return 'In Progress';
-      case BookingStatus.completed:
-        return 'Completed';
-      case BookingStatus.cancelled:
-        return 'Cancelled';
+      case ProfessionType.plumber:
+        return 'Pipe fixing, water system repairs';
+      case ProfessionType.electrician:
+        return 'Electrical wiring & repairs';
+      case ProfessionType.cctvInstaller:
+        return 'Security camera installation';
+      case ProfessionType.solarPanelInstaller:
+        return 'Solar panel setup & maintenance';
+      case ProfessionType.painter:
+        return 'Interior & exterior painting';
+      case ProfessionType.mover:
+        return 'Home & office relocation';
     }
   }
 }

@@ -1,39 +1,18 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_config.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/cubit/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
-import '../../features/auth/presentation/pages/welcome_page.dart';
-import '../../features/booking/presentation/pages/bookings_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
-import '../../features/professional/presentation/bloc/professional_registration_bloc.dart';
 import '../../features/professional/presentation/pages/professional_detail_page.dart';
-import '../../features/professional/presentation/pages/professional_registration_screen.dart';
-import '../../features/profile/presentation/pages/profile_page.dart';
-import '../../features/search/presentation/pages/search_page.dart';
+import '../../features/professional/presentation/pages/professionals_list_page.dart';
 import '../../injection.dart';
 
-// Create a notifier for auth state changes
-class AuthNotifier extends ChangeNotifier {
-  final AuthCubit authCubit;
-
-  AuthNotifier(this.authCubit) {
-    authCubit.stream.listen((_) {
-      notifyListeners();
-    });
-  }
-}
-
 class AppRouter {
-  static final _authNotifier = AuthNotifier(getIt<AuthCubit>());
-
   static GoRouter router = GoRouter(
-    initialLocation: '/',
-    refreshListenable: _authNotifier,
+    initialLocation: '/login',
     redirect: (context, state) {
       final authCubit = getIt<AuthCubit>();
       final authState = authCubit.state;
@@ -41,62 +20,62 @@ class AppRouter {
       final isAuthenticated = authState is AuthAuthenticated;
       final isAuthRoute =
           state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register' ||
-          state.matchedLocation == '/';
-
-      // In test mode, allow access to professional registration
-      final isProfessionalRegistration = state.matchedLocation.startsWith(
-        '/professional-registration',
-      );
-      if (AppConfig.useTestData && isProfessionalRegistration) {
-        return null; // Allow access in test mode
-      }
+          state.matchedLocation == '/register';
 
       // Redirect to home if authenticated and trying to access auth pages
       if (isAuthenticated && isAuthRoute) {
         return '/home';
       }
 
-      // Redirect to welcome if not authenticated and trying to access protected pages
+      // Redirect to login if not authenticated and trying to access protected pages
       if (!isAuthenticated && !isAuthRoute) {
-        return '/';
+        return '/login';
       }
 
-      return null; // No redirect needed
+      return null;
     },
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const WelcomePage()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      // Auth Routes
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => BlocProvider.value(
+          value: getIt<AuthCubit>(),
+          child: const LoginPage(),
+        ),
+      ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterPage(),
+        builder: (context, state) => BlocProvider.value(
+          value: getIt<AuthCubit>(),
+          child: const RegisterPage(),
+        ),
       ),
+
+      // Home Route
       GoRoute(
-        path: '/professional-registration/:userId',
+        path: '/home',
+        builder: (context, state) => BlocProvider.value(
+          value: getIt<AuthCubit>(),
+          child: const HomePage(),
+        ),
+      ),
+
+      // Professionals List Route
+      GoRoute(
+        path: '/professionals/:professionType',
         builder: (context, state) {
-          final userId = state.pathParameters['userId']!;
-          return BlocProvider(
-            create: (context) => getIt<ProfessionalRegistrationBloc>(),
-            child: ProfessionalRegistrationScreen(userId: userId),
-          );
+          final professionType = state.pathParameters['professionType']!;
+          return ProfessionalsListPage(professionType: professionType);
         },
       ),
-      GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+
+      // Professional Detail Route
       GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfilePage(),
-      ),
-      GoRoute(path: '/search', builder: (context, state) => const SearchPage()),
-      GoRoute(
-        path: '/professional-detail/:id',
+        path: '/professional/:id',
         builder: (context, state) {
           final professionalId = state.pathParameters['id']!;
           return ProfessionalDetailPage(professionalId: professionalId);
         },
-      ),
-      GoRoute(
-        path: '/bookings',
-        builder: (context, state) => const BookingsPage(),
       ),
     ],
   );

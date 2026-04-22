@@ -2,7 +2,6 @@ import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 
 import 'core/constants/app_config.dart';
-import 'features/booking/presentation/cubit/bookings_cubit.dart';
 import 'features/professional/data/datasources/professional_mock_datasource.dart';
 import 'features/professional/data/datasources/professional_remote_datasource.dart';
 import 'features/professional/data/repositories/professional_repository_impl.dart';
@@ -12,8 +11,6 @@ import 'features/professional/domain/usecases/register_professional.dart';
 import 'features/professional/domain/usecases/toggle_availability.dart';
 import 'features/professional/domain/usecases/upload_work_images.dart';
 import 'features/professional/presentation/bloc/professional_registration_bloc.dart';
-import 'features/professional/presentation/cubit/professional_detail_cubit.dart';
-import 'features/search/presentation/cubit/search_cubit.dart';
 import 'injection.config.dart';
 
 final getIt = GetIt.instance;
@@ -29,9 +26,6 @@ Future<void> configureDependencies() async {
 
   // Register Professional feature dependencies
   _registerProfessionalDependencies();
-
-  // Register UI Cubits
-  _registerUICubits();
 }
 
 void _registerProfessionalDependencies() {
@@ -64,11 +58,4 @@ void _registerProfessionalDependencies() {
       uploadWorkImages: getIt(),
     ),
   );
-}
-
-void _registerUICubits() {
-  // Register Cubits for UI state management
-  getIt.registerFactory(() => SearchCubit());
-  getIt.registerFactory(() => BookingsCubit());
-  getIt.registerFactory(() => ProfessionalDetailCubit());
 }

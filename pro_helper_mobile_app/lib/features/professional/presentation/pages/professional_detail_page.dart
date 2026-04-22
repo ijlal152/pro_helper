@@ -2,10 +2,10 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/mock_data/mock_professionals.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../injection.dart';
+import '../../domain/entities/professional.dart';
+import '../../domain/entities/review.dart';
 import '../cubit/professional_detail_cubit.dart';
 
 class ProfessionalDetailPage extends StatelessWidget {
@@ -16,622 +16,724 @@ class ProfessionalDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<ProfessionalDetailCubit>()..initialize(),
-      child: _ProfessionalDetailPageContent(professionalId: professionalId),
-    );
-  }
-}
+      create: (context) =>
+          ProfessionalDetailCubit()..loadProfessionalDetails(professionalId),
+      child: BlocBuilder<ProfessionalDetailCubit, ProfessionalDetailState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-class _ProfessionalDetailPageContent extends StatelessWidget {
-  final String professionalId;
-
-  const _ProfessionalDetailPageContent({required this.professionalId});
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ProfessionalDetailCubit, ProfessionalDetailState>(
-      builder: (context, state) {
-        final cubit = context.read<ProfessionalDetailCubit>();
-        final professional = MockProfessionals.getProfessionalById(
-          professionalId,
-        );
-
-        if (professional == null) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(
-                'Professional',
-                style: AppTypography.headingLarge(context),
-              ),
-            ),
-            body: Center(
-              child: Text(
-                'Professional not found',
-                style: AppTypography.bodyLarge(context),
-              ),
-            ),
-          );
-        }
-
-        final user = professional.user;
-
-        return Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              // App Bar with Image
-              SliverAppBar(
-                expandedHeight: 300,
-                pinned: true,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Work Images Carousel
-                      if (professional.workImages.isNotEmpty)
-                        CarouselSlider(
-                          options: CarouselOptions(
-                            height: 300,
-                            viewportFraction: 1.0,
-                            autoPlay: true,
-                            autoPlayInterval: const Duration(seconds: 4),
-                            onPageChanged: (index, reason) {
-                              cubit.updateImageIndex(index);
-                            },
-                          ),
-                          items: professional.workImages.map((imageUrl) {
-                            return Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey[300],
-                                  child: const Icon(
-                                    Icons.image,
-                                    size: 80,
-                                    color: Colors.grey,
-                                  ),
-                                );
-                              },
-                            );
-                          }).toList(),
-                        )
-                      else
-                        Container(
-                          color: Colors.grey[300],
-                          child: const Icon(
-                            Icons.person,
-                            size: 100,
-                            color: Colors.grey,
-                          ),
-                        ),
-
-                      // Gradient Overlay
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.7),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Image Counter
-                      if (professional.workImages.length > 1)
-                        Positioned(
-                          bottom: 16,
-                          right: 16,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${(state as ProfessionalDetailLoaded).currentImageIndex + 1}/${professional.workImages.length}',
-                              style: AppTypography.bodyMedium(context).copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+          if (state.professional == null) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: Center(
+                child: Text(
+                  state.error ?? 'Professional not found',
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
+            );
+          }
 
-              // Content
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Name and Profession
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  user.name,
-                                  style: AppTypography.headingLarge(
-                                    context,
-                                  ).copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Text(
-                                      user.professionType!.icon,
-                                      style: AppTypography.bodyLarge(context),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      user.professionType!.displayName,
-                                      style: AppTypography.bodyLarge(
-                                        context,
-                                      ).copyWith(color: Colors.grey[700]),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Availability Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: professional.isAvailable
-                                  ? Colors.green.shade50
-                                  : Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: professional.isAvailable
-                                    ? Colors.green
-                                    : Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  professional.isAvailable
-                                      ? Icons.check_circle
-                                      : Icons.cancel,
-                                  color: professional.isAvailable
-                                      ? Colors.green.shade700
-                                      : Colors.red.shade700,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  professional.isAvailable
-                                      ? 'Available'
-                                      : 'Busy',
-                                  style: TextStyle(
-                                    color: professional.isAvailable
-                                        ? Colors.green.shade700
-                                        : Colors.red.shade700,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Stats Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.star,
-                              iconColor: Colors.amber[700]!,
-                              label: 'Rating',
-                              value: user.rating?.toStringAsFixed(1) ?? 'N/A',
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.work_outline,
-                              iconColor: Colors.blue,
-                              label: 'Experience',
-                              value: '${user.yearsOfExperience} years',
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _StatCard(
-                              icon: Icons.check_circle_outline,
-                              iconColor: Colors.green,
-                              label: 'Completed',
-                              value: '${professional.completedJobs}',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Hourly Rate
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).primaryColor.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Hourly Rate',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '\$${professional.hourlyRate.toStringAsFixed(0)}/hour',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // About Section
-                      Text(
-                        'About',
-                        style: AppTypography.headingMedium(context),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        professional.bio,
-                        style: AppTypography.bodyLarge(
-                          context,
-                        ).copyWith(color: Colors.grey[700], height: 1.5),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Services Offered
-                      Text(
-                        'Services Offered',
-                        style: AppTypography.headingMedium(context),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: professional.servicesOffered.map((service) {
-                          return Chip(
-                            label: Text(service),
-                            backgroundColor: Theme.of(
-                              context,
-                            ).primaryColor.withOpacity(0.1),
-                            side: BorderSide(
-                              color: Theme.of(
-                                context,
-                              ).primaryColor.withOpacity(0.3),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Contact Information
-                      Text(
-                        'Contact Information',
-                        style: AppTypography.headingMedium(context),
-                      ),
-                      const SizedBox(height: 12),
-                      _ContactTile(
-                        icon: Icons.email,
-                        label: 'Email',
-                        value: user.email,
-                      ),
-                      const SizedBox(height: 8),
-                      _ContactTile(
-                        icon: Icons.phone,
-                        label: 'Phone',
-                        value: user.phoneNumber ?? 'Not provided',
-                      ),
-                      const SizedBox(height: 8),
-                      _ContactTile(
-                        icon: Icons.location_on,
-                        label: 'Location',
-                        value: user.currentLocation?.address ?? 'Not provided',
-                      ),
-                      const SizedBox(height: 80), // Space for floating button
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          floatingActionButton: professional.isAvailable
-              ? FloatingActionButton.extended(
-                  onPressed: () {
-                    _showBookingDialog(context, professional, cubit);
-                  },
-                  icon: const Icon(Icons.calendar_today),
-                  label: const Text('Book Now'),
-                )
-              : null,
-        );
-      },
-    );
-  }
-
-  void _showBookingDialog(
-    BuildContext context,
-    Professional professional,
-    ProfessionalDetailCubit cubit,
-  ) {
-    final descriptionController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
-    int estimatedHours = 2;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text(
-              'Book Service',
-              style: AppTypography.headingMedium(context),
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Booking with ${professional.user.name}',
-                    style: AppTypography.bodyLarge(
-                      context,
-                    ).copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Service Description
-                  TextField(
-                    controller: descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Service Description',
-                      hintText: 'Describe what you need help with...',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Date Selection
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.calendar_today),
-                    title: Text(
-                      'Select Date',
-                      style: AppTypography.bodyMedium(context),
-                    ),
-                    subtitle: Text(
-                      '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-                      style: AppTypography.bodySmall(context),
-                    ),
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        cubit.selectDate(date);
-                        setDialogState(() {
-                          selectedDate = date;
-                        });
-                      }
-                    },
-                  ),
-
-                  // Duration Selection
-                  const SizedBox(height: 8),
-                  Text(
-                    'Estimated Duration: $estimatedHours hours',
-                    style: AppTypography.bodyMedium(
-                      context,
-                    ).copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  Slider(
-                    value: estimatedHours.toDouble(),
-                    min: 1,
-                    max: 8,
-                    divisions: 7,
-                    label: '$estimatedHours hours',
-                    onChanged: (value) {
-                      cubit.updateDuration(value);
-                      setDialogState(() {
-                        estimatedHours = value.toInt();
-                      });
-                    },
-                  ),
-
-                  // Cost Estimate
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Estimated Cost:',
-                          style: AppTypography.bodyMedium(
-                            context,
-                          ).copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          '\$${(professional.hourlyRate * estimatedHours).toStringAsFixed(2)}',
-                          style: AppTypography.bodyLarge(context).copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (descriptionController.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please enter service description'),
-                      ),
-                    );
-                    return;
-                  }
-
-                  Navigator.of(dialogContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Booking request sent successfully!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-
-                  // Navigate back or to bookings page
-                  Future.delayed(const Duration(seconds: 1), () {
-                    context.go('/bookings');
-                  });
-                },
-                child: const Text('Confirm Booking'),
-              ),
-            ],
-          );
+          return _buildDetailScaffold(context, state);
         },
       ),
     );
   }
-}
 
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String value;
+  Widget _buildDetailScaffold(
+    BuildContext context,
+    ProfessionalDetailState state,
+  ) {
+    final professional = state.professional!;
 
-  const _StatCard({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.value,
-  });
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: CustomScrollView(
+        slivers: [
+          // App Bar with Image Carousel
+          _buildAppBar(context, state),
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: iconColor, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTypography.bodyLarge(
-              context,
-            ).copyWith(fontWeight: FontWeight.bold),
+          // Content
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Basic Info Section
+                _buildBasicInfoSection(professional),
+
+                const SizedBox(height: 16),
+
+                // Contact Options
+                _buildContactOptions(context, professional),
+
+                const SizedBox(height: 16),
+
+                // About Section
+                _buildAboutSection(professional),
+
+                const SizedBox(height: 16),
+
+                // Reviews Section
+                _buildReviewsSection(context, state),
+
+                const SizedBox(height: 16),
+
+                // Location Section (if available)
+                _buildLocationSection(),
+
+                const SizedBox(height: 80), // Space for floating button
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
+        ],
+      ),
+
+      // Book Now Button
+      floatingActionButton: professional.isAvailable
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                // TODO: Navigate to booking page
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Booking feature coming soon!')),
+                );
+              },
+              backgroundColor: const Color(0xFF6C47FF),
+              icon: const Icon(Icons.calendar_today),
+              label: const Text('Book Now'),
+            )
+          : null,
+    );
+  }
+
+  Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Could not make call')));
+      }
+    }
+  }
+
+  Future<void> _sendSMS(BuildContext context, String phoneNumber) async {
+    final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber);
+    if (await canLaunchUrl(smsUri)) {
+      await launchUrl(smsUri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Could not send SMS')));
+      }
+    }
+  }
+
+  Future<void> _sendWhatsApp(BuildContext context, String phoneNumber) async {
+    // Remove '+' and spaces from phone number
+    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    final Uri whatsappUri = Uri.parse('https://wa.me/$cleanNumber');
+
+    if (await canLaunchUrl(whatsappUri)) {
+      await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('WhatsApp is not installed')),
+        );
+      }
+    }
+  }
+
+  Widget _buildAppBar(BuildContext context, ProfessionalDetailState state) {
+    final professional = state.professional!;
+    final hasWorkImages = professional.workImages.isNotEmpty;
+
+    return SliverAppBar(
+      expandedHeight: 300,
+      pinned: true,
+      backgroundColor: Colors.white,
+      leading: IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8),
+            ],
+          ),
+          child: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
+        ),
+        onPressed: () => context.pop(),
+      ),
+      actions: [
+        IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8),
+              ],
+            ),
+            child: Icon(
+              state.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+              color: state.isBookmarked
+                  ? const Color(0xFF6C47FF)
+                  : const Color(0xFF1A1A1A),
+            ),
+          ),
+          onPressed: () {
+            context.read<ProfessionalDetailCubit>().toggleBookmark();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.isBookmarked
+                      ? 'Removed from bookmarks'
+                      : 'Added to bookmarks',
+                ),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Work Images Carousel or Profile Image
+            if (hasWorkImages)
+              CarouselSlider(
+                options: CarouselOptions(
+                  height: 300,
+                  viewportFraction: 1.0,
+                  enableInfiniteScroll: professional.workImages.length > 1,
+                  autoPlay: professional.workImages.length > 1,
+                  autoPlayInterval: const Duration(seconds: 4),
+                  onPageChanged: (index, reason) {
+                    context.read<ProfessionalDetailCubit>().updateImageIndex(
+                      index,
+                    );
+                  },
+                ),
+                items: professional.workImages.map((imageUrl) {
+                  return Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: const Color(0xFF6C47FF).withOpacity(0.1),
+                        child: const Icon(
+                          Icons.image,
+                          size: 80,
+                          color: Color(0xFF6C47FF),
+                        ),
+                      );
+                    },
+                  );
+                }).toList(),
+              )
+            else
+              // Default background when no work images
+              Container(
+                color: const Color(0xFF6C47FF).withOpacity(0.1),
+                child: Center(
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundColor: const Color(0xFF6C47FF),
+                    backgroundImage: professional.profileImage != null
+                        ? NetworkImage(professional.profileImage!)
+                        : null,
+                    child: professional.profileImage == null
+                        ? Text(
+                            professional.fullName[0].toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 48,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+              ),
+
+            // Gradient overlay
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                  ),
+                ),
+              ),
+            ),
+
+            // Image counter (if multiple images)
+            if (hasWorkImages && professional.workImages.length > 1)
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${state.currentImageIndex + 1}/${professional.workImages.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBasicInfoSection(Professional professional) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(color: Colors.white),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Name and Availability
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  professional.fullName,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: professional.isAvailable
+                      ? Colors.green[50]
+                      : Colors.red[50],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.circle,
+                      size: 10,
+                      color: professional.isAvailable
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      professional.isAvailable ? 'Available' : 'Busy',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: professional.isAvailable
+                            ? Colors.green[700]
+                            : Colors.red[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Profession and Experience
           Text(
-            label,
-            style: AppTypography.bodySmall(
-              context,
-            ).copyWith(color: Colors.grey[600]),
+            '${professional.profession.toUpperCase()} • ${professional.experienceYears} years experience',
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Rating and Jobs
+          Row(
+            children: [
+              // Rating
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amber[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star, size: 20, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text(
+                      professional.rating.toStringAsFixed(1),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '(${professional.totalReviews})',
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Total Jobs
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6C47FF).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.work_outline,
+                      size: 20,
+                      color: Color(0xFF6C47FF),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${professional.totalJobs} jobs',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF6C47FF),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-}
 
-class _ContactTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _ContactTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildContactOptions(BuildContext context, Professional professional) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(color: Colors.white),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.grey[700]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppTypography.bodySmall(
-                    context,
-                  ).copyWith(color: Colors.grey[600]),
+          const Text(
+            'Contact',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Phone Number
+          Row(
+            children: [
+              const Icon(Icons.phone_outlined, size: 20, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text(
+                professional.phoneNumber,
+                style: const TextStyle(fontSize: 16, color: Color(0xFF1A1A1A)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Contact Buttons
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () =>
+                      _makePhoneCall(context, professional.phoneNumber),
+                  icon: const Icon(Icons.call, size: 20),
+                  label: const Text('Call'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: AppTypography.bodyMedium(
-                    context,
-                  ).copyWith(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _sendSMS(context, professional.phoneNumber),
+                  icon: const Icon(Icons.message, size: 20),
+                  label: const Text('SMS'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () =>
+                      _sendWhatsApp(context, professional.phoneNumber),
+                  icon: const Icon(Icons.chat, size: 20),
+                  label: const Text('WhatsApp'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAboutSection(Professional professional) {
+    if (professional.bio == null || professional.bio!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(color: Colors.white),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'About',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            professional.bio!,
+            style: const TextStyle(
+              fontSize: 15,
+              color: Colors.grey,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsSection(
+    BuildContext context,
+    ProfessionalDetailState state,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(color: Colors.white),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Reviews',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // TODO: Show all reviews
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('View all reviews coming soon!'),
+                    ),
+                  );
+                },
+                child: const Text('View All'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Reviews List
+          if (state.reviews.isEmpty)
+            const Text('No reviews yet', style: TextStyle(color: Colors.grey))
+          else
+            ...state.reviews.take(3).map((review) => _buildReviewItem(review)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewItem(Review review) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: const Color(0xFF6C47FF),
+                child: Text(
+                  review.customerName[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.customerName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        ...List.generate(
+                          5,
+                          (index) => Icon(
+                            index < review.rating.floor()
+                                ? Icons.star
+                                : Icons.star_border,
+                            size: 14,
+                            color: Colors.amber,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(review.createdAt),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            review.comment,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationSection() {
+    // TODO: Show actual location if available
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(color: Colors.white),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Work Location',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Location placeholder
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_on_outlined, color: Colors.grey[600]),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Currently not working on any location',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
                 ),
               ],
             ),
@@ -639,5 +741,24 @@ class _ContactTile extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else if (difference.inDays < 30) {
+      return '${(difference.inDays / 7).floor()} weeks ago';
+    } else if (difference.inDays < 365) {
+      return '${(difference.inDays / 30).floor()} months ago';
+    } else {
+      return '${(difference.inDays / 365).floor()} years ago';
+    }
   }
 }

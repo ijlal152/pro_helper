@@ -20,12 +20,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) => getIt<AuthCubit>()..checkAuthStatus(),
-        ),
-      ],
+    return BlocProvider(
+      create: (context) => getIt<AuthCubit>()..checkAuthStatus(),
       child: MaterialApp.router(
         title: 'ProHelper',
         debugShowCheckedModeBanner: false,
