@@ -7,6 +7,7 @@ import '../../domain/entities/professional.dart';
 import '../cubit/professionals_list_cubit.dart';
 
 class ProfessionalsListPage extends StatelessWidget {
+  static const String id = '/ProfessionalsListPage';
   final String professionType;
 
   const ProfessionalsListPage({super.key, required this.professionType});

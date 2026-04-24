@@ -8,6 +8,7 @@ import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/profile_cubit.dart';
 
 class ProfilePage extends StatelessWidget {
+  static const String id = '/ProfilePage';
   const ProfilePage({super.key});
 
   @override

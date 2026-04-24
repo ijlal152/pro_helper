@@ -9,6 +9,7 @@ import '../../domain/entities/review.dart';
 import '../cubit/professional_detail_cubit.dart';
 
 class ProfessionalDetailPage extends StatelessWidget {
+  static const String id = '/ProfessionalDetailPage';
   final String professionalId;
 
   const ProfessionalDetailPage({super.key, required this.professionalId});

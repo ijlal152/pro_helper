@@ -10,9 +10,14 @@ import '../../features/professional/presentation/pages/professionals_list_page.d
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../injection.dart';
+import 'route_observer.dart';
 
 class AppRouter {
+  static final _routeObserver = AppRouteObserver();
+
   static GoRouter router = GoRouter(
+    debugLogDiagnostics: true, // Enable navigation logging
+    observers: [_routeObserver], // Add custom observer for detailed logs
     initialLocation: '/login',
     redirect: (context, state) {
       // TODO: Enable redirect guards when API is ready
@@ -43,6 +48,7 @@ class AppRouter {
       // Auth Routes
       GoRoute(
         path: '/login',
+        name: LoginPage.id,
         builder: (context, state) => BlocProvider.value(
           value: getIt<AuthCubit>(),
           child: const LoginPage(),
@@ -50,6 +56,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/register',
+        name: RegisterPage.id,
         builder: (context, state) => BlocProvider.value(
           value: getIt<AuthCubit>(),
           child: const RegisterPage(),
@@ -59,6 +66,7 @@ class AppRouter {
       // Home Route
       GoRoute(
         path: '/home',
+        name: HomePage.id,
         builder: (context, state) => BlocProvider.value(
           value: getIt<AuthCubit>(),
           child: const HomePage(),
@@ -68,6 +76,7 @@ class AppRouter {
       // Professionals List Route
       GoRoute(
         path: '/professionals/:professionType',
+        name: ProfessionalsListPage.id,
         builder: (context, state) {
           final professionType = state.pathParameters['professionType']!;
           return ProfessionalsListPage(professionType: professionType);
@@ -77,6 +86,7 @@ class AppRouter {
       // Professional Detail Route
       GoRoute(
         path: '/professional/:id',
+        name: ProfessionalDetailPage.id,
         builder: (context, state) {
           final professionalId = state.pathParameters['id']!;
           return ProfessionalDetailPage(professionalId: professionalId);
@@ -86,6 +96,7 @@ class AppRouter {
       // Profile Routes
       GoRoute(
         path: '/profile',
+        name: ProfilePage.id,
         builder: (context, state) => BlocProvider.value(
           value: getIt<AuthCubit>(),
           child: const ProfilePage(),
@@ -93,6 +104,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/profile/edit',
+        name: EditProfilePage.id,
         builder: (context, state) => const EditProfilePage(),
       ),
     ],

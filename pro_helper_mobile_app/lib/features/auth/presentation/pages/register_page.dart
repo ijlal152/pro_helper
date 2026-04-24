@@ -9,6 +9,7 @@ import '../cubit/auth_state.dart';
 import '../cubit/register_password_visibility_cubit.dart';
 
 class RegisterPage extends StatefulWidget {
+  static const String id = '/RegisterPage';
   const RegisterPage({super.key});
 
   @override

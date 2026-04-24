@@ -9,6 +9,7 @@ import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/edit_profile_cubit.dart';
 
 class EditProfilePage extends StatelessWidget {
+  static const String id = '/EditProfilePage';
   const EditProfilePage({super.key});
 
   @override

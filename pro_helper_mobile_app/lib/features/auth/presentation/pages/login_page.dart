@@ -9,6 +9,7 @@ import '../cubit/auth_state.dart';
 import '../cubit/password_visibility_cubit.dart';
 
 class LoginPage extends StatefulWidget {
+  static const String id = '/LoginPage';
   const LoginPage({super.key});
 
   @override

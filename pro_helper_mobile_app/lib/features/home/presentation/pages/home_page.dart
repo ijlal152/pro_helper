@@ -7,6 +7,7 @@ import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../../../features/auth/presentation/cubit/auth_state.dart';
 
 class HomePage extends StatefulWidget {
+  static const String id = '/HomePage';
   const HomePage({super.key});
 
   @override
