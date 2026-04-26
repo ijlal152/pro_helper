@@ -1,4 +1,3 @@
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,17 +7,38 @@ import '../../domain/entities/professional.dart';
 import '../../domain/entities/review.dart';
 import '../cubit/professional_detail_cubit.dart';
 
-class ProfessionalDetailPage extends StatelessWidget {
+class ProfessionalDetailPage extends StatefulWidget {
   static const String id = '/ProfessionalDetailPage';
   final String professionalId;
 
   const ProfessionalDetailPage({super.key, required this.professionalId});
 
   @override
+  State<ProfessionalDetailPage> createState() => _ProfessionalDetailPageState();
+}
+
+class _ProfessionalDetailPageState extends State<ProfessionalDetailPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) =>
-          ProfessionalDetailCubit()..loadProfessionalDetails(professionalId),
+          ProfessionalDetailCubit()
+            ..loadProfessionalDetails(widget.professionalId),
       child: BlocBuilder<ProfessionalDetailCubit, ProfessionalDetailState>(
         builder: (context, state) {
           if (state.isLoading) {
@@ -52,61 +72,638 @@ class ProfessionalDetailPage extends StatelessWidget {
     final professional = state.professional!;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: CustomScrollView(
-        slivers: [
-          // App Bar with Image Carousel
-          _buildAppBar(context, state),
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          // Hero Image with Profile Overlay
+          _buildHeroSection(context, professional, state),
 
-          // Content
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Scrollable Content
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Professional Info
+                  _buildProfessionalInfo(professional),
+
+                  // Service Type Card
+                  _buildServiceTypeCard(professional),
+
+                  const SizedBox(height: 16),
+
+                  // Tab Bar
+                  _buildTabBar(),
+
+                  const SizedBox(height: 16),
+
+                  // Tab Content
+                  _buildTabContent(context, professional, state),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroSection(
+    BuildContext context,
+    Professional professional,
+    ProfessionalDetailState state,
+  ) {
+    return SizedBox(
+      height: 280,
+      child: Stack(
+        children: [
+          // Hero Image
+          Container(
+            height: 220,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              image: professional.workImages.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(professional.workImages.first),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+              color: professional.workImages.isEmpty
+                  ? const Color(0xFF6C47FF).withOpacity(0.1)
+                  : null,
+            ),
+            child: Stack(
               children: [
-                // Basic Info Section
-                _buildBasicInfoSection(professional),
+                // Gradient overlay
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.3),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Back Button
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 8,
+                  left: 16,
+                  child: GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.arrow_back_ios, size: 16),
+                          Text(
+                            'Back',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
 
-                const SizedBox(height: 16),
-
-                // Contact Options
-                _buildContactOptions(context, professional),
-
-                const SizedBox(height: 16),
-
-                // About Section
-                _buildAboutSection(professional),
-
-                const SizedBox(height: 16),
-
-                // Reviews Section
-                _buildReviewsSection(context, state),
-
-                const SizedBox(height: 16),
-
-                // Location Section (if available)
-                _buildLocationSection(),
-
-                const SizedBox(height: 80), // Space for floating button
+          // Profile Photo & Contact Buttons
+          Positioned(
+            bottom: 0,
+            left: 20,
+            right: 20,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Profile Photo
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundColor: const Color(0xFF6C47FF),
+                    child: professional.profileImage != null
+                        ? ClipOval(
+                            child: Image.network(
+                              professional.profileImage!,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Icon(
+                            Icons.person,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                  ),
+                ),
+                const Spacer(),
+                // Contact Buttons
+                Row(
+                  children: [
+                    _buildContactIconButton(
+                      Icons.message_outlined,
+                      () => _sendSMS(context, professional.phoneNumber),
+                    ),
+                    const SizedBox(width: 12),
+                    _buildContactIconButton(
+                      Icons.phone_outlined,
+                      () => _makePhoneCall(context, professional.phoneNumber),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
 
-      // Book Now Button
-      floatingActionButton: professional.isAvailable
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                // TODO: Navigate to booking page
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Booking feature coming soon!')),
+  Widget _buildContactIconButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFEBE6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: const Color(0xFFFF6B4A), size: 24),
+      ),
+    );
+  }
+
+  Widget _buildProfessionalInfo(Professional professional) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Name with badges
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  professional.fullName,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ),
+              // Badges (verified, etc)
+              const Icon(Icons.verified, color: Color(0xFF6C47FF), size: 20),
+              const SizedBox(width: 4),
+              const Icon(Icons.shield_outlined, color: Colors.grey, size: 20),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.workspace_premium_outlined,
+                color: Colors.grey,
+                size: 20,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Location, Rating, Reviews
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              // Bookmark
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.bookmark_border,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Bookmark',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              // Location
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Mabushi, FCT ( 2.5 mi )',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              // Rating
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.star, size: 16, color: Color(0xFFFFC107)),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${professional.rating.toStringAsFixed(1)} ( ${professional.totalJobs} Reviews )',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceTypeCard(Professional professional) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1B4B5A),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Service Type',
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${professional.profession.substring(0, 1).toUpperCase()}${professional.profession.substring(1)} Services',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                professional.isAvailable ? 'Active' : 'Inactive',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1B4B5A),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: TabBar(
+        controller: _tabController,
+        labelColor: const Color(0xFF6C47FF),
+        unselectedLabelColor: Colors.grey,
+        indicatorColor: const Color(0xFF6C47FF),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        tabs: const [
+          Tab(text: 'Overview'),
+          Tab(text: 'Recent Work'),
+          Tab(text: 'Reviews'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabContent(
+    BuildContext context,
+    Professional professional,
+    ProfessionalDetailState state,
+  ) {
+    return AnimatedBuilder(
+      animation: _tabController,
+      builder: (context, child) {
+        if (_tabController.index == 0) {
+          return _buildOverviewTab(professional);
+        } else if (_tabController.index == 1) {
+          return _buildRecentWorkTab(professional);
+        } else {
+          return _buildReviewsTab(state);
+        }
+      },
+    );
+  }
+
+  Widget _buildOverviewTab(Professional professional) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Specialization
+          const Text(
+            'Specialisation',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildSpecializationChip('Repairing'),
+              _buildSpecializationChip('Painting'),
+              _buildSpecializationChip('Custom Design'),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // About Section
+          const Text(
+            'About',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            professional.bio ??
+                'Skills required in carpentry include proficiency with hand and power tools, understanding of construct techniques and materials, mathematical and tech nical skills for measurements and',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              height: 1.6,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Next Available
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Next Available:',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '2.00 am',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Booking feature coming soon!'),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF6B4A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: const Icon(Icons.calendar_today, size: 18),
+                  label: const Text(
+                    'Check availability',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpecializationChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
+      ),
+    );
+  }
+
+  Widget _buildRecentWorkTab(Professional professional) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (professional.workImages.isEmpty)
+            Center(
+              child: Text(
+                'No work images available',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1,
+              ),
+              itemCount: professional.workImages.length,
+              itemBuilder: (context, index) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    professional.workImages[index],
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.image, size: 40),
+                    ),
+                  ),
                 );
               },
-              backgroundColor: const Color(0xFF6C47FF),
-              icon: const Icon(Icons.calendar_today),
-              label: const Text('Book Now'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsTab(ProfessionalDetailState state) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (state.reviews.isEmpty)
+            Center(
+              child: Text(
+                'No reviews yet',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
             )
-          : null,
+          else
+            ...state.reviews.map((review) => _buildReviewItem(review)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewItem(Review review) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: const Color(0xFF6C47FF),
+                child: Text(
+                  review.customerName[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.customerName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        ...List.generate(
+                          5,
+                          (index) => Icon(
+                            index < review.rating
+                                ? Icons.star
+                                : Icons.star_border,
+                            size: 14,
+                            color: const Color(0xFFFFC107),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(review.createdAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            review.comment,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[700],
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -134,614 +731,6 @@ class ProfessionalDetailPage extends StatelessWidget {
         ).showSnackBar(const SnackBar(content: Text('Could not send SMS')));
       }
     }
-  }
-
-  Future<void> _sendWhatsApp(BuildContext context, String phoneNumber) async {
-    // Remove '+' and spaces from phone number
-    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
-    final Uri whatsappUri = Uri.parse('https://wa.me/$cleanNumber');
-
-    if (await canLaunchUrl(whatsappUri)) {
-      await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('WhatsApp is not installed')),
-        );
-      }
-    }
-  }
-
-  Widget _buildAppBar(BuildContext context, ProfessionalDetailState state) {
-    final professional = state.professional!;
-    final hasWorkImages = professional.workImages.isNotEmpty;
-
-    return SliverAppBar(
-      expandedHeight: 300,
-      pinned: true,
-      backgroundColor: Colors.white,
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8),
-            ],
-          ),
-          child: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
-        ),
-        onPressed: () => context.pop(),
-      ),
-      actions: [
-        IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8),
-              ],
-            ),
-            child: Icon(
-              state.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-              color: state.isBookmarked
-                  ? const Color(0xFF6C47FF)
-                  : const Color(0xFF1A1A1A),
-            ),
-          ),
-          onPressed: () {
-            context.read<ProfessionalDetailCubit>().toggleBookmark();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.isBookmarked
-                      ? 'Removed from bookmarks'
-                      : 'Added to bookmarks',
-                ),
-                duration: const Duration(seconds: 1),
-              ),
-            );
-          },
-        ),
-        const SizedBox(width: 8),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Work Images Carousel or Profile Image
-            if (hasWorkImages)
-              CarouselSlider(
-                options: CarouselOptions(
-                  height: 300,
-                  viewportFraction: 1.0,
-                  enableInfiniteScroll: professional.workImages.length > 1,
-                  autoPlay: professional.workImages.length > 1,
-                  autoPlayInterval: const Duration(seconds: 4),
-                  onPageChanged: (index, reason) {
-                    context.read<ProfessionalDetailCubit>().updateImageIndex(
-                      index,
-                    );
-                  },
-                ),
-                items: professional.workImages.map((imageUrl) {
-                  return Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: const Color(0xFF6C47FF).withOpacity(0.1),
-                        child: const Icon(
-                          Icons.image,
-                          size: 80,
-                          color: Color(0xFF6C47FF),
-                        ),
-                      );
-                    },
-                  );
-                }).toList(),
-              )
-            else
-              // Default background when no work images
-              Container(
-                color: const Color(0xFF6C47FF).withOpacity(0.1),
-                child: Center(
-                  child: CircleAvatar(
-                    radius: 60,
-                    backgroundColor: const Color(0xFF6C47FF),
-                    backgroundImage: professional.profileImage != null
-                        ? NetworkImage(professional.profileImage!)
-                        : null,
-                    child: professional.profileImage == null
-                        ? Text(
-                            professional.fullName[0].toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 48,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-              ),
-
-            // Gradient overlay
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 100,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [Colors.black.withOpacity(0.7), Colors.transparent],
-                  ),
-                ),
-              ),
-            ),
-
-            // Image counter (if multiple images)
-            if (hasWorkImages && professional.workImages.length > 1)
-              Positioned(
-                bottom: 16,
-                right: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${state.currentImageIndex + 1}/${professional.workImages.length}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBasicInfoSection(Professional professional) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(color: Colors.white),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Name and Availability
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  professional.fullName,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: professional.isAvailable
-                      ? Colors.green[50]
-                      : Colors.red[50],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.circle,
-                      size: 10,
-                      color: professional.isAvailable
-                          ? Colors.green
-                          : Colors.red,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      professional.isAvailable ? 'Available' : 'Busy',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: professional.isAvailable
-                            ? Colors.green[700]
-                            : Colors.red[700],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Profession and Experience
-          Text(
-            '${professional.profession.toUpperCase()} • ${professional.experienceYears} years experience',
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Rating and Jobs
-          Row(
-            children: [
-              // Rating
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.amber[50],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.star, size: 20, color: Colors.amber),
-                    const SizedBox(width: 4),
-                    Text(
-                      professional.rating.toStringAsFixed(1),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '(${professional.totalReviews})',
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // Total Jobs
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6C47FF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.work_outline,
-                      size: 20,
-                      color: Color(0xFF6C47FF),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${professional.totalJobs} jobs',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF6C47FF),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContactOptions(BuildContext context, Professional professional) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(color: Colors.white),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Contact',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Phone Number
-          Row(
-            children: [
-              const Icon(Icons.phone_outlined, size: 20, color: Colors.grey),
-              const SizedBox(width: 8),
-              Text(
-                professional.phoneNumber,
-                style: const TextStyle(fontSize: 16, color: Color(0xFF1A1A1A)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Contact Buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () =>
-                      _makePhoneCall(context, professional.phoneNumber),
-                  icon: const Icon(Icons.call, size: 20),
-                  label: const Text('Call'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _sendSMS(context, professional.phoneNumber),
-                  icon: const Icon(Icons.message, size: 20),
-                  label: const Text('SMS'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () =>
-                      _sendWhatsApp(context, professional.phoneNumber),
-                  icon: const Icon(Icons.chat, size: 20),
-                  label: const Text('WhatsApp'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF25D366),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAboutSection(Professional professional) {
-    if (professional.bio == null || professional.bio!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(color: Colors.white),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'About',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            professional.bio!,
-            style: const TextStyle(
-              fontSize: 15,
-              color: Colors.grey,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewsSection(
-    BuildContext context,
-    ProfessionalDetailState state,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(color: Colors.white),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Reviews',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  // TODO: Show all reviews
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('View all reviews coming soon!'),
-                    ),
-                  );
-                },
-                child: const Text('View All'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Reviews List
-          if (state.reviews.isEmpty)
-            const Text('No reviews yet', style: TextStyle(color: Colors.grey))
-          else
-            ...state.reviews.take(3).map((review) => _buildReviewItem(review)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewItem(Review review) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: const Color(0xFF6C47FF),
-                child: Text(
-                  review.customerName[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      review.customerName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        ...List.generate(
-                          5,
-                          (index) => Icon(
-                            index < review.rating.floor()
-                                ? Icons.star
-                                : Icons.star_border,
-                            size: 14,
-                            color: Colors.amber,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatDate(review.createdAt),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            review.comment,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLocationSection() {
-    // TODO: Show actual location if available
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(color: Colors.white),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Work Location',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Location placeholder
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.location_on_outlined, color: Colors.grey[600]),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Currently not working on any location',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   String _formatDate(DateTime date) {
