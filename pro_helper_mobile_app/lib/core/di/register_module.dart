@@ -16,4 +16,3 @@ abstract class RegisterModule {
   Future<SharedPreferences> get sharedPreferences =>
       SharedPreferences.getInstance();
 }
-
